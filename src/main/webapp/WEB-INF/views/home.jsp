@@ -165,7 +165,44 @@
 		dc.onmessage = function(e) {
 			log(">" + e.data) // message receive
 			
-			alert("file 전송 발생");
+			receivedSize = 0;
+			bitrateMax = 0;
+			downloadAnchor.textContent = '';
+			downloadAnchor.removeAttribute('download');
+			
+			if(downloadAnchor.href) {
+				URL.revokeObjectURL(downloadAnchor.href);
+				downloadAnchor.removeAttribute('href');
+			}
+			
+			receiveBuffer.push(e.data);
+			receivedSize += e.data.byteLength;
+			
+			receiveProgress.value = receivedSize;
+			
+			console.log(e.data);
+			
+// 			const file = fileInput.files[0];
+			
+// 			if(receivedSize === file.size) {
+				const received = new Blob(receiveBuffer);
+				receiveBuffer = [];
+				
+				downloadAnchor.href = URL.createObjectURL(received);
+// 				downloadAnchor.download = file.name;
+				downloadAnchor.download = "다운로드";
+// 				downloadAnchor.textContent = `Click to download '${file.name}'' (${file.size} bytes)`;
+				downloadAnchor.textContent = `Click to download`;
+				downloadAnchor.style.display = 'block';
+				
+				const bitrate = Math.round(receivedSize * 8 / ((new Date()).getTime() - timestampStart));
+				bitrateDiv.innerHTML = `<strong>Average Bitrate:</strong> ${bitrate} kbits/sec (max: ${bitrateMax} kbits/sec)`;
+				
+				if(statsInterval) {
+					clearInterval(statsInterval);
+					statsInterval = null;
+				}
+// 			}
 		}
 		
 	// 	pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
