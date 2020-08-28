@@ -32,7 +32,6 @@
 		<progress id="receiveProgress" max="0" value="0"></progress>
 	</div>
 
-	<div id="bitrate"></div>
 	<a id="download"></a>
 	<span id="status"></span>
 
@@ -46,7 +45,6 @@
 	/* 파일전송테스트 */
 	var fileReader;
 	
-	const bitrateDiv = document.querySelector('div#bitrate');
 	const fileInput = document.querySelector('input#fileInput');
 	const abortButton = document.querySelector('button#abortButton');
 	const downloadAnchor = document.querySelector('a#download');
@@ -57,12 +55,6 @@
 
 	var receiveBuffer = [];
 	var receivedSize = 0;
-	
-	var bytesPrev = 0;
-	var timestampPrev = 0;
-	var timestampStart;
-	var statsInterval = null;
-	var bitrateMax = 0;
 	
 	var fname;
 	var fsize;
@@ -112,7 +104,6 @@
 		downloadAnchor.textContent = '';
 		
 		if(file.size === 0) {
-			bitrateDiv.innerHTML = '';
 			statusMessage.textContent = 'File is empty, please select a non-empty file';
 			return;
 		}
@@ -145,23 +136,36 @@
 	
 	dc.onopen = function() { // 연결 및 데이터 요청(연결 성공했을 때, connected 됐을 때)
 		chat.select();
+	
+		/* (function() {
+			const readyState = dc.readyState;
+			if (readyState === 'open') {
+				sendData();
+			}
+		})(); */
 	} 
+	function IsJsonString(str) {
+		  try {
+		    var json = JSON.parse(str);
+		    return (typeof json === 'object');
+		  } catch (e) {
+		    return false;
+		  }
+	}
 	dc.onmessage = function(e) { // 요청 데이터 받아와 사용
-		log("<p style='margin: 5px; float: left; background: #d4d4d4;'>" + e.data + "</p><br>");
 		
 		var arr;
-		
-		
-		
 		if(typeof e.data == 'string') {
-			console.log(JSON.parse(e.data));
-			arr = JSON.parse(e.data);
+			if(IsJsonString(e.data)) {
+				arr = JSON.parse(e.data);				
 
-			fname = arr.filename;
-			fsize = arr.filesize;
+				fname = arr.filename;
+				fsize = arr.filesize;
+			} else {
+				log("<p style='margin: 5px; float: left; background: #d4d4d4;'>" + e.data + "</p><br>");				
+			}
 		}
 		
-		bitrateMax = 0;
 		downloadAnchor.textContent = '';
 		downloadAnchor.removeAttribute('download');
 		
@@ -184,14 +188,6 @@
 			downloadAnchor.download = fname;
 			downloadAnchor.textContent = "Click to download <" + fname + "> " +fsize + "(bytes)";
 			downloadAnchor.style.display = 'block';
-				
-			const bitrate = Math.round(receivedSize * 8 / ((new Date()).getTime() - timestampStart));
-			bitrateDiv.innerHTML = `<strong>Average Bitrate:</strong> ${bitrate} kbits/sec (max: ${bitrateMax} kbits/sec)`;
-				
-			if(statsInterval) {
-				clearInterval(statsInterval);
-				statsInterval = null;
-			}
 		}
 	} 
 	
